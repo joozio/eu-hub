@@ -1,0 +1,73 @@
+{
+  "success": true,
+  "country": [
+    {
+      "indicator": "unemployment",
+      "country": "PL",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 2.9,
+      "unit": "%",
+      "label": "Unemployment Rate",
+      "source": "Eurostat",
+      "category": "economy"
+    },
+    {
+      "indicator": "median_income",
+      "country": "PL",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 12964,
+      "unit": "EUR/year",
+      "label": "Median Income",
+      "source": "Eurostat",
+      "category": "living"
+    },
+    {
+      "indicator": "life_expectancy",
+      "country": "PL",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 78.5,
+      "unit": "years",
+      "label": "Life Expectancy",
+      "source": "Eurostat",
+      "category": "society"
+    }
+  ],
+  "eu": [
+    {
+      "indicator": "unemployment",
+      "country": "EU27_2020",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 5.9,
+      "unit": "%",
+      "label": "Unemployment Rate",
+      "source": "Eurostat",
+      "category": "economy"
+    },
+    {
+      "indicator": "median_income",
+      "country": "EU27_2020",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 24473,
+      "unit": "EUR/year",
+      "label": "Median Income",
+      "source": "Eurostat",
+      "category": "living"
+    },
+    {
+      "indicator": "life_expectancy",
+      "country": "EU27_2020",
+      "period": "2024",
+      "periodLabel": "2024",
+      "value": 81.7,
+      "unit": "years",
+      "label": "Life Expectancy",
+      "source": "Eurostat",
+      "category": "society"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "DE": {
+    "unemployment": {
+      "value": 3.4,
+      "period": "2024"
+    },
+    "gdp_growth": {
+      "value": 0.3,
+      "period": "2025-Q4"
+    },
+    "minimum_wages": {
+      "value": 2343,
+      "period": "2026-S1"
+    },
+    "inflation": {
+      "value": 2,
+      "period": "2025-12"
+    }
+  },
+  "FR": {
+    "unemployment": {
+      "value": 7.4,
+      "period": "2024"
+    },
+    "gdp_growth": {
+      "value": 0.2,
+      "period": "2025-Q4"
+    },
+    "minimum_wages": {
+      "value": 1823,
+      "period": "2026-S1"
+    },
+    "inflation": {
+      "value": 0.7,
+      "period": "2025-12"
+    }
+  },
+  "PL": {
+    "unemployment": {
+      "value": 2.9,
+      "period": "2024"
+    },
+    "gdp_growth": {
+      "value": 1,
+      "period": "2025-Q4"
+    },
+    "minimum_wages": {
+      "value": 1139,
+      "period": "2026-S1"
+    },
+    "inflation": {
+      "value": 2.5,
+      "period": "2025-12"
+    }
+  }
+}
