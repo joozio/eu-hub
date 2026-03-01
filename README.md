@@ -1,110 +1,111 @@
 # EU Hub
 
-EU Hub is a privacy-first web app that turns EU policy and statistics into personal, actionable insights.
+EU Hub is a privacy-first personal intelligence layer for the European Union.
 
-It combines live public EU data (Eurostat, European Parliament RSS, European Commission Press Corner) with Mistral-powered explanations and explicit trust metadata.
+It combines live EU public data with AI explanations to answer one practical question:
+what EU policy changes matter to this specific person right now?
 
-## What is unique
+## Why this project stands out
 
-- **Trust layer**: source health, provenance, freshness, and last-update metadata in API + UI
-- **Personalization 2.0**: user-controlled priority themes (cost of living, jobs, family, rights, climate, digital)
-- **Wow moment**: one-click **My EU Impact Brief** with opportunities, risks, and weekly action
-- **Hybrid demo-safe mode**: live-first with snapshot fallback for stable presentations
+- Trust-first UX: every major view surfaces freshness, source, and health metadata.
+- Personalization that is explicit: users choose priorities and see why content is relevant.
+- Live-safe demo mode: the app is resilient even if upstream APIs or AI fail.
+- Action-oriented AI output: "My EU Impact Brief" gives opportunities, risks, and one weekly action.
 
-## Core Features
+## Product scope
 
-- Local-only profile personalization (no account required)
-- Live EU feed with AI summaries and relevance ranking
-- Real Eurostat stats with country vs EU comparisons
-- Country rankings and head-to-head compare view
-- EU vs world context cards with official references
-- AI chat with streaming + fallback behavior
-- Source health endpoint and dashboard panel
+- Personalized dashboard with source health panel.
+- EU news feed from official RSS sources with AI summaries.
+- Eurostat-powered stats and cross-country comparisons.
+- Rankings for all 27 EU countries by indicator.
+- "EU vs rest of world" context cards with official references.
+- Ask EU chat with streaming and fallback behavior.
 
-## Tech Stack
+## Architecture at a glance
 
-- Next.js 16 (App Router)
-- React 19 + TypeScript
-- Tailwind CSS 4
-- Chart.js + react-chartjs-2
-- Mistral API
-- Eurostat public API
+- Frontend and backend: Next.js 16 App Router.
+- Data connectors: Eurostat API, European Parliament RSS, EC Press Corner RSS.
+- AI: Mistral API with deterministic fallback when unavailable.
+- Personalization: local-first profile and scoring in browser storage.
+- Resilience: timeout guards, cache/stale/snapshot fallback, source health tracking.
+- Security: CSP headers, input normalization, route guards, correlation IDs.
 
-## Data Sources
+## Demo-ready workflow
 
-- European Parliament RSS
-- European Commission Press Corner RSS
-- Eurostat API
-- Curated EUR-Lex references for key policy context
+1. Create profile and select priority themes.
+2. Open dashboard and show health/freshness indicators.
+3. Trigger "My EU Impact Brief".
+4. Open feed/stats/rankings and point to official provenance.
+5. Show fallback continuity with `?demo=1`.
 
-## Security and Reliability
+Detailed demo narrative:
+- [Demo Script](docs/demo-script.md)
+- [Judges One-Pager](docs/judges-one-pager.md)
 
-- Per-route in-memory rate limiting
-- Input validation/normalization on API boundaries
-- Upstream timeout wrappers
-- Request correlation IDs (`x-request-id`)
-- CSP + secure response headers
-- Cache + stale-cache + snapshot fallback paths
-
-## Getting Started
+## Quick start
 
 ### Prerequisites
 
-- Node.js 20+ (22 recommended)
+- Node.js 20+ (Node 22 recommended)
 - npm
 
-### Install
+### Install and run
 
 ```bash
 npm install
-```
-
-### Run locally
-
-```bash
 cp .env.example .env.local
-# add MISTRAL_API_KEY (optional for non-AI fallback flows)
+# optional: set MISTRAL_API_KEY for AI features
 npm run dev
 ```
 
-### Quality checks
+### Production and demo preflight
 
 ```bash
-npm run check
+npm run preflight
 ```
 
-## Environment Variables
+This runs:
+- lint + tests + production build
+- dependency audit (high severity gate)
+- credential-pattern scan
+- demo snapshot fixture verification
 
-- `MISTRAL_API_KEY` - enables AI routes/features
-- `NEXT_PUBLIC_DEMO_MODE` - `off` | `hybrid` | `snapshot`
+For judging day:
 
-You can also force snapshot mode per request with query param: `?demo=1`.
+```bash
+npm run demo:ready
+```
 
-## Scripts
+This refreshes snapshots and then runs full preflight.
 
-- `npm run dev` - start dev server
-- `npm run build` - production build
-- `npm run start` - run production server
-- `npm run lint` - ESLint
-- `npm run test` - Node test runner
-- `npm run check` - lint + test + build
-- `npm run preflight` - production + security gate (`check` + audit + secret scan + demo fixtures)
-- `npm run demo:snapshot` - refresh demo snapshot JSON files
-- `npm run demo:ready` - refresh snapshots, then run full preflight
+## Environment variables
 
-## GitHub Safety Checklist
+- `MISTRAL_API_KEY`: enables AI routes and summaries.
+- `NEXT_PUBLIC_DEMO_MODE`: `off` | `hybrid` | `snapshot`.
 
-- Keep `.env.local` local-only (`.env*` is gitignored by default).
-- Put real keys only in runtime environment/hosting secrets.
-- Run `npm run preflight` before every public push.
-- If a key was ever exposed, rotate it immediately in provider dashboard.
+You can force snapshot mode per request with `?demo=1`.
 
-## Key API Contracts
+## Data sources
 
-- `GET /api/eu-feed` -> returns feed + `meta` (freshness, source health, provenance)
-- `GET /api/rankings` -> returns rankings + `meta` (coverage, methodology, freshness)
-- `GET /api/health/sources` -> returns per-source status/latency/staleness
-- `POST /api/personalized-brief` -> returns structured impact brief (AI or fallback)
+- Eurostat API
+- European Parliament RSS
+- European Commission Press Corner RSS
+- Curated EUR-Lex references for policy context
+
+## API contract highlights
+
+- `GET /api/eu-feed`: feed plus freshness/source health metadata.
+- `GET /api/rankings`: rankings plus methodology and coverage metadata.
+- `GET /api/health/sources`: per-source status, latency, and staleness.
+- `POST /api/personalized-brief`: structured impact brief (AI or fallback).
+
+## Security and key hygiene
+
+- `.env*` is gitignored by default.
+- Do not commit live API keys.
+- Use environment secrets in hosting provider for production.
+- Run `npm run preflight` before public pushes.
+- Rotate keys immediately if exposure is suspected.
 
 ## Documentation
 
@@ -113,12 +114,6 @@ You can also force snapshot mode per request with query param: `?demo=1`.
 - [Judges One-Pager](docs/judges-one-pager.md)
 - [Contributing](CONTRIBUTING.md)
 
-## Known Limitations
-
-- Rate limits, cache, and source health are in-memory for single-instance deployment
-- Some policy context content is curated and periodically refreshed
-- FX conversion uses static approximations (not finance-grade)
-
 ## License
 
-MIT (see `LICENSE`)
+MIT, see [LICENSE](LICENSE).
