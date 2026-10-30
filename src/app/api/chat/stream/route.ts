@@ -9,12 +9,16 @@ import {
   checkRateLimit,
   fetchWithTimeout,
   isRecord,
+  requireJsonContentType,
 } from '@/lib/api-guard';
 import { withSourceProbe } from '@/lib/source-registry';
 
 export async function POST(req: NextRequest) {
   const limited = checkRateLimit(req, { key: 'api-chat-stream', max: 20, windowMs: 60_000 });
   if (limited) return limited;
+
+  const wrongType = requireJsonContentType(req);
+  if (wrongType) return wrongType;
 
   let body: unknown;
   try {
@@ -106,7 +110,7 @@ Guidelines:
 
   if (!response.ok || !response.body) {
     return new Response(JSON.stringify({ error: 'Mistral API error' }), {
-      status: response.status,
+      status: 502,
       headers: { 'Content-Type': 'application/json' },
     });
   }

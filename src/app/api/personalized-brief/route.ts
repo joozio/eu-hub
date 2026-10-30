@@ -1,5 +1,14 @@
 import { NextRequest } from 'next/server';
-import { checkRateLimit, fetchWithTimeout, isRecord } from '@/lib/api-guard';
+import {
+  asAge,
+  asCountryCode,
+  asHttpUrl,
+  asTrimmedString,
+  checkRateLimit,
+  fetchWithTimeout,
+  isRecord,
+  requireJsonContentType,
+} from '@/lib/api-guard';
 import { jsonWithRequestId } from '@/lib/request-id';
 import { withSourceProbe } from '@/lib/source-registry';
 import { getRequestDemoMode } from '@/lib/demo-mode';
@@ -30,14 +39,15 @@ function asProfile(value: unknown): UserProfile {
     )
     : undefined;
 
+  // Every string here is forwarded to a paid API, so lengths are bounded.
   return {
-    country: typeof value.country === 'string' ? value.country : '',
-    age: typeof value.age === 'number' ? value.age : 30,
-    employmentStatus: typeof value.employmentStatus === 'string' ? value.employmentStatus : undefined,
-    industry: typeof value.industry === 'string' ? value.industry : undefined,
-    housingStatus: typeof value.housingStatus === 'string' ? value.housingStatus : undefined,
+    country: asCountryCode(value.country),
+    age: asAge(value.age),
+    employmentStatus: asTrimmedString(value.employmentStatus, 40) || undefined,
+    industry: asTrimmedString(value.industry, 40) || undefined,
+    housingStatus: asTrimmedString(value.housingStatus, 40) || undefined,
     isParent: value.isParent === true,
-    priorityThemes: themes,
+    priorityThemes: themes ? [...new Set(themes)] : undefined,
   };
 }
 
@@ -56,11 +66,11 @@ function asStatArray(value: unknown): StatEntry[] {
     .filter((row): row is Record<string, unknown> => isRecord(row))
     .slice(0, 8)
     .map((row) => ({
-      indicator: typeof row.indicator === 'string' ? row.indicator : 'unknown',
-      value: typeof row.value === 'number' ? row.value : Number(row.value) || 0,
-      unit: typeof row.unit === 'string' ? row.unit : '',
-      label: typeof row.label === 'string' ? row.label : String(row.indicator || 'Indicator'),
-      source: typeof row.source === 'string' ? row.source : 'Eurostat',
+      indicator: asTrimmedString(row.indicator, 40) || 'unknown',
+      value: typeof row.value === 'number' && Number.isFinite(row.value) ? row.value : Number(row.value) || 0,
+      unit: asTrimmedString(row.unit, 16),
+      label: asTrimmedString(row.label, 80) || asTrimmedString(row.indicator, 40) || 'Indicator',
+      source: asTrimmedString(row.source, 40) || 'Eurostat',
     }));
 }
 
@@ -70,11 +80,54 @@ function asFeedArray(value: unknown): FeedEntry[] {
     .filter((row): row is Record<string, unknown> => isRecord(row))
     .slice(0, 6)
     .map((row) => ({
-      title: typeof row.title === 'string' ? row.title : 'EU update',
-      summary: typeof row.summary === 'string' ? row.summary : '',
-      sourceUrl: typeof row.sourceUrl === 'string' ? row.sourceUrl : 'https://ec.europa.eu/commission/presscorner/home/en',
-      source: typeof row.source === 'string' ? row.source : 'EU Source',
+      title: asTrimmedString(row.title, 200) || 'EU update',
+      summary: asTrimmedString(row.summary, 300),
+      sourceUrl: asHttpUrl(row.sourceUrl, 300) || 'https://ec.europa.eu/commission/presscorner/home/en',
+      source: asTrimmedString(row.source, 60) || 'EU Source',
     }));
+}
+
+interface BriefSection {
+  title: string;
+  items: string[];
+}
+
+interface BriefCitation {
+  label: string;
+  url: string;
+  source: string;
+}
+
+// The model is free to return any JSON shape; the dashboard renders section.items.map
+// and citation.url as a link, so only well-formed sections and http(s) links pass.
+function asBriefSections(value: unknown): BriefSection[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((row): row is Record<string, unknown> => isRecord(row))
+    .slice(0, 6)
+    .map((row) => ({
+      title: asTrimmedString(row.title, 120),
+      items: Array.isArray(row.items)
+        ? row.items.map((item) => asTrimmedString(item, 500)).filter(Boolean).slice(0, 6)
+        : [],
+    }))
+    .filter((section) => section.title && section.items.length > 0);
+}
+
+function asBriefCitations(value: unknown): BriefCitation[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((row): row is Record<string, unknown> => isRecord(row))
+    .slice(0, 8)
+    .map((row) => {
+      const url = asHttpUrl(row.url);
+      return {
+        url,
+        label: asTrimmedString(row.label, 120) || (url ? new URL(url).hostname : ''),
+        source: asTrimmedString(row.source, 80),
+      };
+    })
+    .filter((citation) => citation.url);
 }
 
 function buildDeterministicBrief(profile: UserProfile, stats: StatEntry[], feed: FeedEntry[]) {
@@ -136,6 +189,9 @@ function buildDeterministicBrief(profile: UserProfile, stats: StatEntry[], feed:
 export async function POST(req: NextRequest) {
   const limited = checkRateLimit(req, { key: 'api-personalized-brief', max: 20, windowMs: 60_000 });
   if (limited) return limited;
+
+  const wrongType = requireJsonContentType(req);
+  if (wrongType) return wrongType;
 
   const demoMode = getRequestDemoMode(req);
 
@@ -200,14 +256,16 @@ export async function POST(req: NextRequest) {
     }
 
     const parsed = JSON.parse(raw);
-    if (!isRecord(parsed) || !Array.isArray(parsed.sections)) {
+    const sections = isRecord(parsed) ? asBriefSections(parsed.sections) : [];
+    if (!isRecord(parsed) || sections.length === 0) {
       return jsonWithRequestId(req, fallbackResult);
     }
 
+    const citations = asBriefCitations(parsed.citations);
     const safeResult = {
-      brief: typeof parsed.brief === 'string' ? parsed.brief : fallbackResult.brief,
-      sections: parsed.sections,
-      citations: Array.isArray(parsed.citations) ? parsed.citations : fallbackResult.citations,
+      brief: asTrimmedString(parsed.brief, 1000) || fallbackResult.brief,
+      sections,
+      citations: citations.length > 0 ? citations : fallbackResult.citations,
       mode: 'ai' as const,
     };
 

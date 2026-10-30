@@ -8,6 +8,7 @@ import {
   checkRateLimit,
   fetchWithTimeout,
   isRecord,
+  requireJsonContentType,
 } from '@/lib/api-guard';
 import { withSourceProbe } from '@/lib/source-registry';
 import { jsonWithRequestId } from '@/lib/request-id';
@@ -15,6 +16,9 @@ import { jsonWithRequestId } from '@/lib/request-id';
 export async function POST(req: NextRequest) {
   const limited = checkRateLimit(req, { key: 'api-dashboard-welcome', max: 25, windowMs: 60_000 });
   if (limited) return limited;
+
+  const wrongType = requireJsonContentType(req);
+  if (wrongType) return wrongType;
 
   let body: unknown;
   try {
@@ -87,7 +91,7 @@ IMPORTANT: Respond entirely in ${language}. No markdown. No bullet points. Just 
     }, 20_000));
 
     if (!response.ok) {
-      return jsonWithRequestId(req, { error: 'Mistral API error' }, response.status);
+      return jsonWithRequestId(req, { error: 'Mistral API error' }, 502);
     }
 
     const data = await response.json();

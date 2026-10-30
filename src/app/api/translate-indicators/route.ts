@@ -5,13 +5,22 @@ import {
   checkRateLimit,
   fetchWithTimeout,
   isRecord,
+  requireJsonContentType,
 } from '@/lib/api-guard';
+
+// Indicator ids look like "gdp_growth"; there are fewer than 30 of them.
+const MAX_MAP_KEYS = 64;
+const INDICATOR_KEY_RE = /^[a-z0-9_]{1,40}$/;
 
 function sanitizeStringMap(value: unknown): Record<string, string> {
   if (!isRecord(value)) return {};
   const out: Record<string, string> = {};
+  let count = 0;
   for (const [k, v] of Object.entries(value)) {
-    if (typeof v === 'string') out[k] = v.slice(0, 200);
+    if (count >= MAX_MAP_KEYS) break;
+    if (typeof v !== 'string' || !INDICATOR_KEY_RE.test(k)) continue;
+    out[k] = v.slice(0, 200);
+    count += 1;
   }
   return out;
 }
@@ -66,6 +75,9 @@ const STATIC_LABEL_OVERRIDES: Record<string, { labels: Record<string, string>; h
 export async function POST(req: NextRequest) {
   const limited = checkRateLimit(req, { key: 'api-translate-indicators', max: 40, windowMs: 60_000 });
   if (limited) return limited;
+
+  const wrongType = requireJsonContentType(req);
+  if (wrongType) return wrongType;
 
   let body: unknown;
   try {

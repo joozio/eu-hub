@@ -20,9 +20,24 @@ function cleanupBuckets(now: number) {
   }
 }
 
+function lastHop(value: string | null): string {
+  if (!value) return '';
+  const hops = value.split(',').map((hop) => hop.trim()).filter(Boolean);
+  return hops[hops.length - 1] || '';
+}
+
 export function getClientIp(req: NextRequest): string {
-  const forwarded = req.headers.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]?.trim() || 'unknown';
+  // Optional override for deployments whose edge sets a dedicated header (e.g. cf-connecting-ip).
+  const trustedHeader = (process.env.TRUSTED_CLIENT_IP_HEADER || '').trim().toLowerCase();
+  if (trustedHeader) {
+    const trusted = lastHop(req.headers.get(trustedHeader));
+    if (trusted) return trusted;
+  }
+
+  // Proxies append the peer address, so only the last hop is trustworthy.
+  // Earlier entries are client-supplied and would let anyone rotate rate-limit buckets.
+  const forwarded = lastHop(req.headers.get('x-forwarded-for'));
+  if (forwarded) return forwarded;
   return (
     req.headers.get('x-real-ip')
     || req.headers.get('cf-connecting-ip')
@@ -56,6 +71,25 @@ export function checkRateLimit(req: NextRequest, options: RateLimitOptions): Nex
   existing.count += 1;
   rateLimitBuckets.set(bucketKey, existing);
   return null;
+}
+
+// Browsers can send text/plain POSTs cross-site without a CORS preflight. Requiring
+// application/json forces a preflight, which fails because no CORS headers are served.
+export function requireJsonContentType(req: NextRequest): NextResponse | null {
+  const type = (req.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  if (type === 'application/json') return null;
+  return NextResponse.json({ error: 'Content-Type must be application/json' }, { status: 415 });
+}
+
+export function asHttpUrl(value: unknown, maxLen = 500): string {
+  const raw = asTrimmedString(value, maxLen);
+  if (!raw) return '';
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
 }
 
 export function asTrimmedString(value: unknown, maxLen = 120): string {

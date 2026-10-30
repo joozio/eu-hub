@@ -25,6 +25,18 @@ const EC_RSS_URL = 'https://ec.europa.eu/commission/presscorner/api/rss?language
 
 const feedCache = new Map<string, { items: FeedItem[]; timestamp: number }>();
 const CACHE_TTL = 30 * 60 * 1000;
+// Keys include free-text profile fields, so the cache must not grow without limit.
+const MAX_FEED_CACHE_ENTRIES = 500;
+
+function setFeedCache(key: string, items: FeedItem[]) {
+  feedCache.delete(key);
+  while (feedCache.size >= MAX_FEED_CACHE_ENTRIES) {
+    const oldest = feedCache.keys().next().value;
+    if (oldest === undefined) break;
+    feedCache.delete(oldest);
+  }
+  feedCache.set(key, { items, timestamp: Date.now() });
+}
 
 interface FeedResponseMeta {
   generatedAt: string;
@@ -250,7 +262,7 @@ export async function GET(req: NextRequest) {
     if (housingStatus) profileParts.push(`housing: ${housingStatus}`);
 
     const processedItems = await translateAndScore(rawItems, language, profileParts.join(', '));
-    feedCache.set(cacheKey, { items: processedItems, timestamp: Date.now() });
+    setFeedCache(cacheKey, processedItems);
 
     return jsonWithRequestId(req, {
       success: true,
