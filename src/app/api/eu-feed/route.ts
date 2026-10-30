@@ -32,6 +32,9 @@ function parseRSS(xml: string, sourceName: string = 'European Parliament'): Feed
 
     if (!title) continue;
 
+    const parsedDate = pubDate ? new Date(pubDate) : new Date();
+    const date = (Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate).toISOString().split('T')[0];
+
     let type: FeedItem['type'] = 'news';
     const catStr = categories.join(' ').toLowerCase();
     const titleLower = title.toLowerCase();
@@ -45,7 +48,7 @@ function parseRSS(xml: string, sourceName: string = 'European Parliament'): Feed
       id: guid,
       title,
       description: desc.slice(0, 300),
-      date: pubDate ? new Date(pubDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      date,
       type,
       relevanceScore: 0.8,
       sourceUrl: link,
@@ -131,7 +134,8 @@ Output ${result.length} lines, one per item, in order. No numbering, no extra te
         .filter((l: string) => l.includes('|'));
 
       for (let i = 0; i < Math.min(lines.length, result.length); i++) {
-        const line = lines[i].replace(/^\d+\.\s*/, '');
+        // Strip "1. " style numbering only; a bare "0.9|" is the score itself.
+        const line = lines[i].replace(/^\d+[.)]\s+/, '');
         const parts = line.split('|');
         if (parts.length < 2) continue;
 

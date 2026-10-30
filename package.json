@@ -7,6 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
     "test:security": "node tests/model-security.cjs && node tests/feed-security.cjs"
   },
   "dependencies": {
@@ -28,6 +29,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.3",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

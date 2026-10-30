@@ -63,6 +63,9 @@ function parseLatest(data: Record<string, unknown>, fallback: number): { value: 
   return { value: fallback, period: '—' };
 }
 
+// Period that parseLatest and fetchCountryData give a built-in estimate.
+const ESTIMATE_PERIOD = parseLatest({}, 0).period;
+
 async function fetchCountryData(country: string): Promise<CountryData> {
   const geo = getGeo(country);
   const results = await Promise.allSettled(
@@ -79,7 +82,9 @@ async function fetchCountryData(country: string): Promise<CountryData> {
   );
   const out: CountryData = {};
   results.forEach(r => {
-    if (r.status === 'fulfilled') {
+    // Failed indicators come back as the same built-in estimate for every country,
+    // which would show as fake ties. Drop them; rows without data are hidden.
+    if (r.status === 'fulfilled' && r.value.period !== ESTIMATE_PERIOD) {
       out[r.value.id] = { value: r.value.value, period: r.value.period };
     }
   });
