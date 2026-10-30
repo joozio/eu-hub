@@ -134,10 +134,11 @@ export default function StatsPage() {
       if (result.success) {
         setCountryData(result.country as StatData[]);
         setEuData(result.eu as StatData[]);
+        // Failed indicators are filled with estimates; never label those as live Eurostat data.
         setMeta({
           generatedAt: new Date().toISOString(),
-          freshness: 'live',
-          sourceHealth: 'ok',
+          freshness: result.partial ? 'snapshot' : 'live',
+          sourceHealth: result.partial ? 'degraded' : 'ok',
         });
       }
     } catch (error) {

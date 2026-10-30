@@ -14,6 +14,7 @@ import {
 } from 'chart.js';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTranslation, countryFlag } from '@/hooks/useProfile';
+import { withClientDemoParam } from '@/lib/demo-mode';
 import { useTranslatedIndicators } from '@/hooks/useTranslatedIndicators';
 import { ShareButton } from '@/components/ui/share-button';
 import type { IndicatorRanking, RankingsData } from '@/services/eurostat-rankings';
@@ -45,7 +46,7 @@ export default function RankingsPage() {
   }, [profile.country, router]);
 
   useEffect(() => {
-    fetch('/api/rankings')
+    fetch(withClientDemoParam('/api/rankings'))
       .then(r => r.json())
       .then((d: RankingsData & { meta?: RankingsMeta }) => {
         if (d.indicators) setData(d);

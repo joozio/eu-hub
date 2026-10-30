@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation, countryName, countryFlag } from '@/hooks/useProfile';
+import { withClientDemoParam } from '@/lib/demo-mode';
 import { useTranslatedIndicators } from '@/hooks/useTranslatedIndicators';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { SkeletonStat } from '@/components/ui/skeleton';
@@ -113,7 +114,7 @@ export default function DashboardPage() {
     })();
 
     // Fetch top news - try quick first for instant display, then warm the cache
-    fetch(`/api/eu-feed?country=${country}&age=${profile.age}&quick=true`)
+    fetch(withClientDemoParam(`/api/eu-feed?country=${country}&age=${profile.age}&quick=true`))
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setNews((data.data || []).slice(0, 3));
@@ -121,7 +122,7 @@ export default function DashboardPage() {
         // If we got raw (untranslated) data, trigger a full fetch in the background
         // to warm the cache with translated content for when user visits feed
         if (data.source === 'live-raw') {
-          fetch(`/api/eu-feed?country=${country}&age=${profile.age}`).then(r => r.json()).then(fullData => {
+          fetch(withClientDemoParam(`/api/eu-feed?country=${country}&age=${profile.age}`)).then(r => r.json()).then(fullData => {
             if (fullData.success) {
               setNews((fullData.data || []).slice(0, 3));
               if (fullData.meta) setNewsMeta(fullData.meta as FeedMeta);
@@ -177,7 +178,7 @@ export default function DashboardPage() {
         .sort((a, b) => b.score - a.score)
         .slice(0, 4);
 
-      const response = await fetch('/api/personalized-brief', {
+      const response = await fetch(withClientDemoParam('/api/personalized-brief'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

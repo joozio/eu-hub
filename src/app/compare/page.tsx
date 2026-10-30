@@ -66,8 +66,13 @@ async function fetchCountryData(country: string): Promise<CountryData> {
     const result = await fetchEurostatData(country, COMPARE_INDICATORS.map((ind) => ind.id));
     if (!result.success) throw new Error('Eurostat compare fetch failed');
 
+    // Failed indicators come back as the same built-in estimate for every country,
+    // which would show as fake ties. Drop them; rows without data are hidden.
+    const rows = result.data.filter((row) => row.source !== 'Estimate');
+    if (rows.length === 0) throw new Error('Eurostat compare fetch failed');
+
     return Object.fromEntries(
-      result.data.map((row) => [
+      rows.map((row) => [
         row.indicator,
         { value: row.value, period: row.period || '—' },
       ])

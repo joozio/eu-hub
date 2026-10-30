@@ -40,7 +40,7 @@ const TabsList = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>
     <div
       ref={ref}
       className={cn(
-        'inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-slate-800 p-1',
+        'inline-flex max-w-full overflow-x-auto scrollbar-hide items-center gap-1 rounded-lg bg-gray-100 dark:bg-slate-800 p-1',
         className
       )}
       {...props}

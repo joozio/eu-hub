@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslation, countryName, countryFlag } from '@/hooks/useProfile';
+import { withClientDemoParam } from '@/lib/demo-mode';
 import { Badge } from '@/components/ui/badge';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { FeedItem } from '@/types';
@@ -54,7 +55,7 @@ function FeedContent() {
       setError(null);
 
       const [liveResult, curatedResult] = await Promise.allSettled([
-        fetch(`/api/eu-feed?country=${profile.country}&age=${profile.age}`).then(r => r.json()),
+        fetch(withClientDemoParam(`/api/eu-feed?country=${profile.country}&age=${profile.age}`)).then(r => r.json()),
         import('@/services/api').then(m => m.fetchLatestEUContent(profile.country, profile.age)),
       ]);
 

@@ -31,6 +31,13 @@ export function getClientDemoMode(): DemoMode {
   return queryMode ?? getEnvDemoMode();
 }
 
+// Carries a page-level ?demo= override through to same-origin API calls.
+export function withClientDemoParam(url: string): string {
+  const mode = getClientDemoMode();
+  if (mode === 'off') return url;
+  return `${url}${url.includes('?') ? '&' : '?'}demo=${mode}`;
+}
+
 export function shouldUseSnapshot(mode: DemoMode): boolean {
   return mode === 'snapshot';
 }

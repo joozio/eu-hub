@@ -347,6 +347,7 @@ export async function fetchWithEUComparison(
   success: boolean;
   country: EurostatResponse[];
   eu: EurostatResponse[];
+  partial: boolean;
 }> {
   const [countryData, euData] = await Promise.all([
     fetchRealEurostatData(country, indicatorIds),
@@ -357,6 +358,8 @@ export async function fetchWithEUComparison(
     success: true,
     country: countryData.data,
     eu: euData.data,
+    // True when any value is a built-in estimate rather than Eurostat data.
+    partial: Boolean(countryData.partial || euData.partial),
   };
 }
 
