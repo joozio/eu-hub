@@ -4,15 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useTranslation, countryName, countryFlag } from '@/hooks/useProfile';
-import { withClientDemoParam } from '@/lib/demo-mode';
 import { useTranslatedIndicators } from '@/hooks/useTranslatedIndicators';
 import { AnimatedNumber } from '@/components/ui/animated-number';
 import { SkeletonStat } from '@/components/ui/skeleton';
 import EUComparisonSection from '@/components/EUComparisonSection';
 import { FeedItem } from '@/types';
 import { getCurrency, isEurozone, eurToLocal } from '@/lib/currencies';
-import { ShareButton } from '@/components/ui/share-button';
-import { scoreFeedLikeItem } from '@/lib/personalization';
 
 interface StatData {
   indicator: string;
@@ -20,27 +17,6 @@ interface StatData {
   unit: string;
   label: string;
   category: string;
-}
-
-interface FeedMeta {
-  generatedAt: string;
-  freshness: 'live' | 'cached' | 'stale' | 'snapshot';
-  sourceHealth: 'ok' | 'degraded';
-}
-
-interface ImpactBrief {
-  brief: string;
-  sections: Array<{ title: string; items: string[] }>;
-  citations: Array<{ label: string; url: string; source: string }>;
-  mode: 'ai' | 'fallback';
-}
-
-interface SourceStatus {
-  sourceId: string;
-  sourceName: string;
-  status: 'ok' | 'degraded' | 'down';
-  latencyMs: number | null;
-  stale: boolean;
 }
 
 export default function DashboardPage() {
@@ -68,17 +44,10 @@ export default function DashboardPage() {
   // Top news
   const [news, setNews] = useState<FeedItem[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
-  const [newsMeta, setNewsMeta] = useState<FeedMeta | null>(null);
 
   // EU comparison insight
   const [comparisonInsight, setComparisonInsight] = useState('');
   const [comparisonInsightLoading, setComparisonInsightLoading] = useState(false);
-
-  // Wow moment: personalized impact brief
-  const [impactBrief, setImpactBrief] = useState<ImpactBrief | null>(null);
-  const [impactBriefLoading, setImpactBriefLoading] = useState(false);
-  const [sourceStatus, setSourceStatus] = useState<SourceStatus[]>([]);
-  const [isDark, setIsDark] = useState(false);
 
   // Profile completeness
   const isProfileIncomplete = !profile.employmentStatus || !profile.industry || !profile.housingStatus;
@@ -114,42 +83,21 @@ export default function DashboardPage() {
     })();
 
     // Fetch top news - try quick first for instant display, then warm the cache
-    fetch(withClientDemoParam(`/api/eu-feed?country=${country}&age=${profile.age}&quick=true`))
+    fetch(`/api/eu-feed?country=${country}&age=${profile.age}&quick=true`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success) setNews((data.data || []).slice(0, 3));
-        if (data.meta) setNewsMeta(data.meta as FeedMeta);
         // If we got raw (untranslated) data, trigger a full fetch in the background
         // to warm the cache with translated content for when user visits feed
         if (data.source === 'live-raw') {
-          fetch(withClientDemoParam(`/api/eu-feed?country=${country}&age=${profile.age}`)).then(r => r.json()).then(fullData => {
-            if (fullData.success) {
-              setNews((fullData.data || []).slice(0, 3));
-              if (fullData.meta) setNewsMeta(fullData.meta as FeedMeta);
-            }
+          fetch(`/api/eu-feed?country=${country}&age=${profile.age}`).then(r => r.json()).then(fullData => {
+            if (fullData.success) setNews((fullData.data || []).slice(0, 3));
           }).catch(() => {});
         }
       })
       .catch(() => {})
       .finally(() => setNewsLoading(false));
-
-    fetch('/api/health/sources')
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data.sources)) setSourceStatus(data.sources as SourceStatus[]);
-      })
-      .catch(() => {});
   }, [country, profile.age, profile.employmentStatus, lang]);
-
-  useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const root = document.documentElement;
-    const sync = () => setIsDark(root.classList.contains('dark'));
-    sync();
-    const observer = new MutationObserver(sync);
-    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
 
   const handleComparisonInsight = async () => {
     setComparisonInsightLoading(true);
@@ -168,53 +116,23 @@ export default function DashboardPage() {
     finally { setComparisonInsightLoading(false); }
   };
 
-  const handleImpactBrief = async () => {
-    if (impactBriefLoading) return;
-    setImpactBriefLoading(true);
-
-    try {
-      const rankedNews = [...news]
-        .map((item) => ({ ...item, score: scoreFeedLikeItem(profile, item).score }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 4);
-
-      const response = await fetch(withClientDemoParam('/api/personalized-brief'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          profile,
-          topStats: stats.slice(0, 4),
-          topFeedItems: rankedNews,
-        }),
-      });
-
-      const data = await response.json();
-      if (data && data.sections) setImpactBrief(data as ImpactBrief);
-    } catch (error) {
-      console.error('Failed to generate impact brief:', error);
-    } finally {
-      setImpactBriefLoading(false);
-    }
+  const STAT_COLORS: Record<string, string> = {
+    unemployment: '#003399',
+    life_expectancy: '#10b981',
+    median_income: '#6366f1',
   };
-
-  const STAT_COLORS: Record<string, string> = isDark
-    ? {
-      unemployment: '#60a5fa',
-      life_expectancy: '#34d399',
-      median_income: '#a78bfa',
-    }
-    : {
-      unemployment: '#003399',
-      life_expectancy: '#10b981',
-      median_income: '#6366f1',
-    };
 
   return (
     <div className="min-h-screen bg-background py-6 sm:py-8 pb-24 md:pb-8">
       <main className="max-w-5xl mx-auto px-4 sm:px-6 space-y-6">
         {/* 1. Welcome Hero */}
-        <div className="hero-mesh hero-tone-dashboard rounded-2xl animate-slide-up">
-          <div className="hero-content p-6 sm:p-8">
+        <div className="rounded-2xl overflow-hidden animate-slide-up relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-[#001a4d] via-[#003399] to-[#0044cc]" />
+          <div className="absolute inset-0 opacity-[0.04]" style={{
+            backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+            backgroundSize: '20px 20px',
+          }} />
+          <div className="relative p-6 sm:p-8">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-3xl">{flag}</span>
               <div>
@@ -233,79 +151,8 @@ export default function DashboardPage() {
               <p className="text-sm text-white/60 italic">{t('landing.powered')}</p>
             )}
             <p className="text-xs text-white/50 mt-3">Mistral AI</p>
-            <div className="mt-4">
-              <button
-                onClick={handleImpactBrief}
-                disabled={impactBriefLoading}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/15 text-white border border-white/20 hover:bg-white/20 transition-colors text-sm font-semibold disabled:opacity-60"
-              >
-                <span>My EU Impact Brief</span>
-                {impactBriefLoading && <span className="text-xs text-white/70">Generating...</span>}
-              </button>
-            </div>
           </div>
         </div>
-
-        {impactBrief && (
-          <div className="rounded-2xl border border-blue-100 dark:border-slate-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-slate-900 dark:to-slate-800 p-5 animate-slide-up">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <h2 className="text-lg font-bold text-gray-900 dark:text-slate-100">My EU Impact Brief</h2>
-                <p className="text-xs text-gray-600 dark:text-slate-300">{impactBrief.mode === 'ai' ? 'Generated with Mistral AI' : 'Deterministic fallback brief'}</p>
-              </div>
-              <ShareButton title="My EU Impact Brief" text={impactBrief.brief} size="sm" />
-            </div>
-            <p className="text-sm text-gray-700 dark:text-slate-200 mb-3">{impactBrief.brief}</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {impactBrief.sections.map((section) => (
-                <div key={section.title} className="rounded-xl border border-blue-100 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-3">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-1">{section.title}</p>
-                  <ul className="space-y-1">
-                    {section.items.map((item) => (
-                      <li key={item} className="text-xs text-gray-600 dark:text-slate-300">{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {impactBrief.citations.map((citation) => (
-                <a
-                  key={`${citation.source}-${citation.url}`}
-                  href={citation.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs px-2 py-1 rounded-full border border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:text-eu-blue hover:border-blue-200 dark:hover:border-blue-400 transition-colors"
-                >
-                  {citation.label}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {sourceStatus.length > 0 && (
-          <div className="rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4 animate-slide-up">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-sm font-bold text-gray-900 dark:text-slate-100">Live Source Status</h2>
-              <span className="text-xs text-gray-500 dark:text-slate-300">/api/health/sources</span>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {sourceStatus.map((source) => (
-                <div key={source.sourceId} className="rounded-lg border border-gray-100 dark:border-slate-700 p-2">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-slate-200">{source.sourceName}</p>
-                  <p className={`text-xs mt-0.5 ${
-                    source.status === 'ok' ? 'text-emerald-600' : source.status === 'degraded' ? 'text-amber-600' : 'text-red-600'
-                  }`}>
-                    {source.status}
-                    {source.stale ? ' (stale)' : ''}
-                  </p>
-                  <p className="text-[11px] text-gray-500 dark:text-slate-300 mt-0.5">{source.latencyMs ? `${source.latencyMs}ms` : 'n/a'}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* 2. Profile Completion CTA */}
         {isProfileIncomplete && (
@@ -354,7 +201,7 @@ export default function DashboardPage() {
                   <Link
                     key={stat.indicator}
                     href="/stats"
-                    className="card-spotlight rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4 card-hover group"
+                    className="rounded-xl border border-gray-100 bg-white p-4 card-hover group"
                   >
                     <p className="text-xs text-gray-600 mb-1 group-hover:text-eu-blue transition-colors">{translatedLabels[stat.indicator] || stat.label}</p>
                     <p className="text-2xl font-bold font-data" style={{ color }}>
@@ -381,7 +228,6 @@ export default function DashboardPage() {
                         {t('stats.eu_avg')} {formatValue(euMatch.value, euMatch.unit)} ({diff > 0 ? '+' : ''}{diff.toFixed(1)})
                       </p>
                     )}
-                    <p className="text-[11px] text-gray-400 mt-1.5">Eurostat &middot; live</p>
                   </Link>
                 );
               })}
@@ -392,14 +238,7 @@ export default function DashboardPage() {
         {/* 4. Top EU News */}
         <div className="animate-slide-up" style={{ animationDelay: '200ms' }}>
           <div className="flex items-center justify-between mb-3">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">{t('dashboard.top_news')}</h2>
-              {newsMeta && (
-                <p className="text-xs text-gray-500 mt-0.5">
-                  Source: EP + EC &middot; {newsMeta.freshness} &middot; {new Date(newsMeta.generatedAt).toLocaleTimeString(lang, { hour: '2-digit', minute: '2-digit' })}
-                </p>
-              )}
-            </div>
+            <h2 className="text-lg font-bold text-gray-900">{t('dashboard.top_news')}</h2>
             <Link href="/feed" className="text-sm text-eu-blue hover:text-eu-blue-vivid font-medium transition-colors">
               {t('dashboard.view_all')} &rarr;
             </Link>
@@ -426,7 +265,7 @@ export default function DashboardPage() {
                   href={item.sourceUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="card-spotlight flex-shrink-0 w-72 sm:w-80 snap-start rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4 hover:shadow-md hover:-translate-y-0.5 transition-all group"
+                  className="flex-shrink-0 w-72 sm:w-80 snap-start rounded-xl border border-gray-100 bg-white p-4 hover:shadow-md hover:-translate-y-0.5 transition-all group"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -443,10 +282,7 @@ export default function DashboardPage() {
                   {item.summary && (
                     <p className="text-xs text-gray-500 line-clamp-2">{item.summary}</p>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
-                    {item.date}
-                    {newsMeta && <span className="ml-1 uppercase">({newsMeta.freshness})</span>}
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">{item.date}</p>
                 </a>
               ))}
             </div>
@@ -463,7 +299,6 @@ export default function DashboardPage() {
           </div>
           <EUComparisonSection
             t={t}
-            profile={profile}
             insight={comparisonInsight}
             insightLoading={comparisonInsightLoading}
             onRequestInsight={handleComparisonInsight}
@@ -484,7 +319,7 @@ export default function DashboardPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="card-spotlight rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-900/70 p-4 card-hover text-center group"
+                className="rounded-xl border border-gray-100 bg-white p-4 card-hover text-center group"
               >
                 <span className="text-2xl block mb-2 group-hover:scale-110 transition-transform">{link.icon}</span>
                 <p className="text-sm font-semibold text-gray-900">{link.label}</p>

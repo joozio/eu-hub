@@ -239,72 +239,6 @@ input, select, textarea {
   opacity: 0.8;
 }
 
-/* ======================== */
-/*   Hero system            */
-/* ======================== */
-
-.hero-mesh {
-  position: relative;
-  overflow: hidden;
-  border-bottom-left-radius: 1.25rem;
-  border-bottom-right-radius: 1.25rem;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
-}
-
-.hero-mesh::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image:
-    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.14) 0, transparent 32%),
-    radial-gradient(circle at 84% 12%, rgba(56, 189, 248, 0.2) 0, transparent 28%),
-    radial-gradient(circle at 12% 86%, rgba(255, 204, 0, 0.12) 0, transparent 30%),
-    radial-gradient(circle, rgba(255, 255, 255, 0.12) 1px, transparent 1px);
-  background-size: auto, auto, auto, 18px 18px;
-  opacity: 0.45;
-  pointer-events: none;
-}
-
-.hero-mesh::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(130deg, rgba(2, 10, 32, 0.25), rgba(2, 10, 32, 0.05));
-  pointer-events: none;
-}
-
-.hero-tone-dashboard { background: linear-gradient(140deg, #001a4d 0%, #003399 45%, #0057d8 100%); }
-.hero-tone-feed { background: linear-gradient(140deg, #02204f 0%, #0d3f98 44%, #1f5ec8 100%); }
-.hero-tone-stats { background: linear-gradient(140deg, #001f63 0%, #0a4ab5 44%, #1d6fe0 100%); }
-.hero-tone-rankings { background: linear-gradient(140deg, #0a1f52 0%, #18489e 48%, #2f5fc9 100%); }
-.hero-tone-compare { background: linear-gradient(140deg, #09255f 0%, #1f4ea8 46%, #0b63f3 100%); }
-.hero-tone-life { background: linear-gradient(140deg, #0a2358 0%, #164aa3 45%, #0d65d9 100%); }
-
-.hero-content {
-  position: relative;
-  z-index: 1;
-}
-
-/* Subtle animated spotlight for key cards */
-.card-spotlight {
-  position: relative;
-}
-
-.card-spotlight::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(120deg, rgba(59, 130, 246, 0.12), rgba(255, 204, 0, 0.08));
-  opacity: 0;
-  transition: opacity 0.25s ease;
-  pointer-events: none;
-}
-
-.card-spotlight:hover::before {
-  opacity: 1;
-}
-
 /* Sentiment card accents */
 .sentiment-positive { border-left: 3px solid #10b981; }
 .sentiment-negative { border-left: 3px solid #ef4444; }
@@ -345,14 +279,6 @@ input, select, textarea {
   background: rgba(30, 41, 59, 0.7);
 }
 
-.dark .hero-mesh {
-  box-shadow: inset 0 -1px 0 rgba(148, 163, 184, 0.2);
-}
-
-.dark .hero-mesh::before {
-  opacity: 0.38;
-}
-
 /* Key surface overrides */
 .dark body {
   background-color: #0f172a;
@@ -387,10 +313,6 @@ input, select, textarea {
 .dark [class~="text-slate-500"] { color: #94a3b8; }
 .dark [class~="text-gray-400"],
 .dark [class~="text-slate-400"] { color: #94a3b8; }
-.dark [class~="text-eu-blue"] { color: #93c5fd; }
-.dark [class~="text-eu-blue-vivid"] { color: #bfdbfe; }
-.dark [class~="hover:text-eu-blue"]:hover { color: #bfdbfe; }
-.dark [class~="hover:text-eu-blue-vivid"]:hover { color: #dbeafe; }
 
 /* Borders */
 .dark [class~="border-gray-100"],

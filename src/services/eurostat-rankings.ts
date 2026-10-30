@@ -5,7 +5,6 @@
 
 import { INDICATORS, IndicatorConfig, getEurostatGeo } from './eurostat';
 import { EU_COUNTRIES } from '@/lib/countries';
-import { withSourceProbe } from '@/lib/source-registry';
 
 // 8 selected indicators for rankings (wide variance, easy comprehension)
 const RANKING_INDICATOR_IDS = [
@@ -78,7 +77,7 @@ function buildBulkUrl(config: IndicatorConfig, geoCodes: string[]): string {
  * Parse a multi-geo Eurostat JSON-stat response.
  * Returns a map of country code -> { value, period } for the latest available data point.
  */
-export function parseMultiGeoResponse(
+function parseMultiGeoResponse(
   data: Record<string, unknown>,
   geoCodes: string[]
 ): Map<string, { value: number; period: string }> {
@@ -150,7 +149,7 @@ async function fetchBulkIndicator(
   const allCodes = [...geoCodes, 'EU27_2020'];
   const url = buildBulkUrl(config, allCodes);
 
-  const response = await withSourceProbe('eurostat', () => fetch(url, { next: { revalidate: 21600 } })); // 6 hours
+  const response = await fetch(url, { next: { revalidate: 21600 } }); // 6 hours
   if (!response.ok) {
     throw new Error(`Eurostat API error for ${config.id}: ${response.status}`);
   }

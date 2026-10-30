@@ -1,125 +1,132 @@
-# EU Hub
+# EU Hub - The European Union, Made Personal
 
-EU Hub is a privacy-first personal intelligence layer for the European Union.
+A personalized gateway to everything happening in the EU — legislation, stats, changes that actually affect you — powered by Mistral AI.
 
-It combines live EU public data with AI explanations to answer one practical question:
-what EU policy changes matter to this specific person right now?
+## Features
 
-## Why this project stands out
+- **Personalized EU Feed**: Get EU legislation and policy changes relevant to your country and age
+- **AI-Powered Summaries**: Mistral AI summarizes dense legal/policy text into plain language
+- **Eurostat Data Visualization**: Explore EU statistics visualized for your country and demographic
+- **Q&A Interface**: Ask questions about EU topics in natural language
+- **Privacy-First**: No account needed, minimal data collection
 
-- Trust-first UX: every major view surfaces freshness, source, and health metadata.
-- Personalization that is explicit: users choose priorities and see why content is relevant.
-- Live-safe demo mode: the app is resilient even if upstream APIs or AI fail.
-- Action-oriented AI output: "My EU Impact Brief" gives opportunities, risks, and one weekly action.
+## Tech Stack
 
-## Product scope
+- **Next.js 14** with App Router
+- **TypeScript** for type safety
+- **Tailwind CSS** for styling
+- **Chart.js** for data visualization
+- **Lucide React** for icons
+- **Axios** for API calls
 
-- Personalized dashboard with source health panel.
-- EU news feed from official RSS sources with AI summaries.
-- Eurostat-powered stats and cross-country comparisons.
-- Rankings for all 27 EU countries by indicator.
-- "EU vs rest of world" context cards with official references.
-- Ask EU chat with streaming and fallback behavior.
-
-## Architecture at a glance
-
-- Frontend and backend: Next.js 16 App Router.
-- Data connectors: Eurostat API, European Parliament RSS, EC Press Corner RSS.
-- AI: Mistral API with deterministic fallback when unavailable.
-- Personalization: local-first profile and scoring in browser storage.
-- Resilience: timeout guards, cache/stale/snapshot fallback, source health tracking.
-- Security: CSP headers, input normalization, route guards, correlation IDs.
-
-## Demo-ready workflow
-
-1. Create profile and select priority themes.
-2. Open dashboard and show health/freshness indicators.
-3. Trigger "My EU Impact Brief".
-4. Open feed/stats/rankings and point to official provenance.
-5. Show fallback continuity with `?demo=1`.
-
-Detailed demo narrative:
-- [Demo Script](docs/demo-script.md)
-- [Judges One-Pager](docs/judges-one-pager.md)
-
-## Quick start
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 20+ (Node 22 recommended)
-- npm
+- Node.js 18+
+- npm or yarn
 
-### Install and run
+### Installation
 
 ```bash
 npm install
-cp .env.example .env.local
-# optional: set MISTRAL_API_KEY for AI features
+# or
+yarn install
+```
+
+### Development
+
+```bash
 npm run dev
+# or
+yarn dev
 ```
 
-### Production and demo preflight
+### Production Build
 
 ```bash
-npm run preflight
+npm run build
+npm start
 ```
 
-This runs:
-- lint + tests + production build
-- dependency audit (high severity gate)
-- credential-pattern scan
-- demo snapshot fixture verification
+## Project Structure
 
-For judging day:
-
-```bash
-npm run demo:ready
+```
+eu-hub/
+├── src/
+│   ├── app/                  # Next.js app routes
+│   │   ├── (landing)/         # Landing page
+│   │   ├── feed/              # Personalized feed
+│   │   ├── profile/           # User profile
+│   │   ├── stats/             # Statistics visualization
+│   │   └── ask/               # Q&A interface
+│   ├── components/           # Reusable components
+│   │   ├── ui/               # UI primitives
+│   │   └── *                 # Custom components
+│   ├── lib/                  # Utilities
+│   ├── services/             # API services
+│   └── types/                # TypeScript types
+├── public/                  # Static assets
+└── README.md                 # Project documentation
 ```
 
-This refreshes snapshots and then runs full preflight.
+## Key Components
 
-## Environment variables
+### Landing Page
+- Country selector with flags
+- Age selector
+- Minimal onboarding (country + age)
 
-- `MISTRAL_API_KEY`: enables AI routes and summaries.
-- `NEXT_PUBLIC_DEMO_MODE`: `off` | `hybrid` | `snapshot`.
+### Feed Page
+- Personalized EU content based on user profile
+- Tabs for different content types:
+  - Most Relevant (relevance-scored)
+  - What's New (chronological)
+  - What's Coming (proposals)
+  - Interesting Stats
 
-You can force snapshot mode per request with `?demo=1`.
+### Profile Page
+- Additional personalization options:
+  - Relationship status
+  - Employment status
+  - Industry/sector
+  - Housing status
+  - Parent status
 
-## Data sources
+### Stats Page
+- Eurostat data visualization
+- Country and indicator selection
+- Interactive charts
 
-- Eurostat API
-- European Parliament RSS
-- European Commission Press Corner RSS
-- Curated EUR-Lex references for policy context
+### Ask Page
+- Natural language Q&A interface
+- Conversation history
+- AI-powered answers about EU topics
 
-## API contract highlights
+## Data Sources (Mock Implementation)
 
-- `GET /api/eu-feed`: feed plus freshness/source health metadata.
-- `GET /api/rankings`: rankings plus methodology and coverage metadata.
-- `GET /api/health/sources`: per-source status, latency, and staleness.
-- `POST /api/personalized-brief`: structured impact brief (AI or fallback).
+The current implementation uses mock data, but is designed to integrate with:
 
-## Security and key hygiene
+- **EUR-Lex**: EU law database
+- **Eurostat**: EU statistics
+- **European Parliament Legislative Observatory**: Legislative tracking
+- **Mistral AI API**: For summarization and Q&A
 
-- `.env*` is gitignored by default.
-- Do not commit live API keys.
-- Use environment secrets in hosting provider for production.
-- Run `npm run preflight` before public pushes.
-- Rotate keys immediately if exposure is suspected.
+## Future Enhancements
 
-## Documentation
-
-- [Architecture](docs/architecture.md)
-- [Demo Script](docs/demo-script.md)
-- [Judges One-Pager](docs/judges-one-pager.md)
-- [Contributing](CONTRIBUTING.md)
+- Real API integration with EUR-Lex and Eurostat
+- Actual Mistral AI API calls for summarization
+- User authentication for saving preferences
+- Push notifications for relevant updates
+- Multi-language support
+- Mobile app version
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+MIT License
 
----
+## Acknowledgments
 
-Built by [Pawel Jozefiak](https://thoughts.jock.pl). I write about AI agents, automation, and building in public at **[Digital Thoughts](https://thoughts.jock.pl)** (1,000+ subscribers).
-
-[Subscribe to the newsletter](https://thoughts.jock.pl/subscribe) | [More projects](https://github.com/joozio) | [@joozio](https://x.com/joozio)
+- Built with Next.js and Mistral AI
+- Inspired by the need for accessible EU information
+- Designed for privacy-conscious users

@@ -7,7 +7,6 @@ export interface UserProfile {
   housingStatus?: string;
   isParent?: boolean;
   otherDetails?: string;
-  priorityThemes?: PriorityTheme[];
 }
 
 export interface EUContent {
@@ -43,25 +42,4 @@ export interface ChatMessage {
   content: string;
   isUser: boolean;
   timestamp: Date;
-}
-
-export type SourceId = 'eurostat' | 'ep_rss' | 'ec_presscorner' | 'mistral';
-export type FreshnessMode = 'live' | 'cached' | 'stale' | 'snapshot';
-export type PriorityTheme = 'cost_of_living' | 'jobs' | 'family' | 'rights' | 'climate' | 'digital';
-
-export interface ProvenanceRef {
-  sourceId: SourceId;
-  sourceName: string;
-  sourceUrl: string;
-  fetchedAt: string;
-  freshness: FreshnessMode;
-}
-
-export interface SourceHealth {
-  sourceId: SourceId;
-  status: 'ok' | 'degraded' | 'down';
-  latencyMs: number | null;
-  lastSuccessAt: string | null;
-  lastErrorAt: string | null;
-  stale: boolean;
 }

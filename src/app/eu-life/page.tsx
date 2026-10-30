@@ -46,8 +46,15 @@ export default function EULifePage() {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       {/* Hero banner */}
-      <div className="hero-mesh hero-tone-life">
-        <div className="hero-content max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-[#001a4d] via-[#003399] to-[#0044cc]" />
+        <div className="absolute inset-0 opacity-[0.04]" style={{
+          backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        }} />
+        <div className="absolute top-[-20%] right-[-10%] w-[400px] h-[400px] rounded-full bg-gradient-to-br from-indigo-500/10 to-blue-600/5 blur-3xl" />
+
+        <div className="relative max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
           <div className="flex items-start justify-between gap-3 mb-2">
             <h1 className="text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'var(--font-heading)' }}>
               {t('eu_life.title')}
@@ -95,7 +102,6 @@ export default function EULifePage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
         <EUComparisonSection
           t={t}
-          profile={profile}
           insight={insight}
           insightLoading={insightLoading}
           onRequestInsight={handleInsight}

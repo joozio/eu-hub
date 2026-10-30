@@ -33,8 +33,7 @@ export function useProfile(): UserProfile {
               prev.industry === next.industry &&
               prev.housingStatus === next.housingStatus &&
               prev.isParent === next.isParent &&
-              prev.relationshipStatus === next.relationshipStatus &&
-              JSON.stringify(prev.priorityThemes || []) === JSON.stringify(next.priorityThemes || [])
+              prev.relationshipStatus === next.relationshipStatus
             ) return prev;
             return next;
           });

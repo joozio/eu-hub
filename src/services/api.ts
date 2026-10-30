@@ -6,7 +6,6 @@
 
 import { UserProfile } from '@/types';
 import { getCountryName } from '@/lib/countries';
-import { normalizePriorityThemes } from '@/lib/personalization';
 
 // ============================================================
 // EU Content Feed - Real legislation, curated data
@@ -261,28 +260,6 @@ function calculateRelevance(
   // Housing → boost housing/energy topics
   if (housingStatus === 'renter' && (item.topics.includes('housing') || item.topics.includes('energy'))) {
     score += 0.06;
-  }
-
-  const TOPIC_THEME_MAP: Record<string, Array<'cost_of_living' | 'jobs' | 'family' | 'rights' | 'climate' | 'digital'>> = {
-    housing: ['cost_of_living', 'family'],
-    energy: ['cost_of_living', 'climate'],
-    employment: ['jobs'],
-    business: ['jobs', 'digital'],
-    education: ['family', 'jobs'],
-    consumer_rights: ['rights', 'family'],
-    environment: ['climate'],
-    technology: ['digital'],
-  };
-  const selectedThemes = normalizePriorityThemes(profile);
-  if (selectedThemes.length > 0) {
-    const matchedThemes = new Set<string>();
-    for (const topic of item.topics) {
-      const mapped = TOPIC_THEME_MAP[topic] || [];
-      for (const theme of mapped) {
-        if (selectedThemes.includes(theme)) matchedThemes.add(theme);
-      }
-    }
-    score += matchedThemes.size * 0.04;
   }
 
   return Math.min(score, 1.0);

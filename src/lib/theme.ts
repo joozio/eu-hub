@@ -5,8 +5,8 @@ export type Theme = 'light' | 'dark' | 'system';
 const STORAGE_KEY = 'eu-hub-theme';
 
 export function getStoredTheme(): Theme {
-  if (typeof window === 'undefined') return 'light';
-  return (localStorage.getItem(STORAGE_KEY) as Theme) || 'light';
+  if (typeof window === 'undefined') return 'system';
+  return (localStorage.getItem(STORAGE_KEY) as Theme) || 'system';
 }
 
 export function setStoredTheme(theme: Theme) {

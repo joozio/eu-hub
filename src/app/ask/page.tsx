@@ -49,34 +49,15 @@ export default function AskPage() {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
-      let buffer = '';
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(l => l.startsWith('data:'));
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith('data:')) continue;
-          const data = trimmed.replace(/^data:\s?/, '');
+          const data = line.replace('data: ', '').trim();
           if (data === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(data);
-            if (parsed.content) {
-              fullText += parsed.content;
-              setStreamingText(fullText);
-            }
-          } catch { /* skip */ }
-        }
-      }
-
-      const tail = buffer.trim();
-      if (tail.startsWith('data:')) {
-        const data = tail.replace(/^data:\s?/, '');
-        if (data && data !== '[DONE]') {
           try {
             const parsed = JSON.parse(data);
             if (parsed.content) {
@@ -173,7 +154,7 @@ export default function AskPage() {
                 <button
                   key={i}
                   onClick={() => handleSuggestion(q)}
-                  className="text-sm px-4 py-2.5 bg-white dark:bg-slate-900/70 border border-gray-100 dark:border-slate-700 rounded-full text-gray-600 dark:text-slate-300 hover:border-eu-blue-vivid hover:text-eu-blue hover:bg-blue-50/50 dark:hover:bg-blue-950/40 transition-all hover:shadow-sm"
+                  className="text-sm px-4 py-2.5 bg-white border border-gray-100 rounded-full text-gray-600 hover:border-eu-blue-vivid hover:text-eu-blue hover:bg-blue-50/50 transition-all hover:shadow-sm"
                 >
                   {q}
                 </button>
@@ -201,12 +182,12 @@ export default function AskPage() {
                       <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z" />
                     </svg>
                   </div>
-                  <div className="bg-white dark:bg-slate-900/75 border border-gray-100 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[80%] sm:max-w-[70%] shadow-sm">
+                  <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm max-w-[80%] sm:max-w-[70%] shadow-sm">
                     <div className="flex items-center gap-1.5 mb-2">
-                      <span className="text-xs font-semibold text-gray-700 dark:text-slate-100">EU Hub AI</span>
-                      <span className="text-xs text-gray-400 dark:text-slate-300">Mistral</span>
+                      <span className="text-xs font-semibold text-gray-700">EU Hub AI</span>
+                      <span className="text-xs text-gray-400">Mistral</span>
                     </div>
-                    <div className="text-sm text-gray-700 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                    <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
                       {formatMessage(item.a || streamingText)}
                       {!item.a && streamingText && (
                         <span className="inline-block w-1.5 h-4 bg-eu-blue-vivid rounded-full ml-0.5 animate-pulse" />
@@ -226,7 +207,7 @@ export default function AskPage() {
                   <path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61z" />
                 </svg>
               </div>
-              <div className="bg-white dark:bg-slate-900/75 border border-gray-100 dark:border-slate-700 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
+              <div className="bg-white border border-gray-100 px-4 py-3 rounded-2xl rounded-tl-sm shadow-sm">
                 <div className="flex gap-1">
                   {[0, 1, 2].map(i => (
                     <div key={i} className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
@@ -248,7 +229,7 @@ export default function AskPage() {
                 value={question}
                 onChange={(e) => setQuestion(e.target.value)}
                 placeholder={t('ask.placeholder')}
-                className="flex-1 px-4 py-3 bg-white/80 dark:bg-slate-900/80 border border-gray-200 dark:border-slate-700 rounded-xl text-gray-900 dark:text-slate-100 placeholder-gray-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-eu-blue-vivid/50 focus:border-eu-blue-vivid outline-none transition-all text-sm"
+                className="flex-1 px-4 py-3 bg-white/80 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-eu-blue-vivid/50 focus:border-eu-blue-vivid outline-none transition-all text-sm"
                 disabled={loading}
               />
               <button
@@ -302,7 +283,7 @@ function formatInline(text: string): React.ReactNode {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
   return parts.map((part, i) => {
     if (part.startsWith('**') && part.endsWith('**')) {
-      return <strong key={i} className="font-semibold text-gray-900 dark:text-slate-100">{part.slice(2, -2)}</strong>;
+      return <strong key={i} className="font-semibold text-gray-900">{part.slice(2, -2)}</strong>;
     }
     return part;
   });

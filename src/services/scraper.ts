@@ -1,3 +1,5 @@
+import { profile } from '@/lib/model-schema';
+import { modelFetch, GuardError } from '@/lib/model-guard';
 /**
  * EU Data Scraper using fetch + HTML parsing
  * Scrapes EUR-Lex and European Council websites for real legislation and policy updates
@@ -64,6 +66,7 @@ export async function scrapeEURLex(): Promise<ScrapeResult> {
       source: 'eurlex',
     };
   } catch (error) {
+    if (error instanceof GuardError) throw error;
     console.error('EUR-Lex scraping failed:', error);
     return {
       success: false,
@@ -124,6 +127,7 @@ export async function scrapeCouncilPress(): Promise<ScrapeResult> {
       source: 'council',
     };
   } catch (error) {
+    if (error instanceof GuardError) throw error;
     console.error('Council scraping failed:', error);
     return {
       success: false,
@@ -134,6 +138,7 @@ export async function scrapeCouncilPress(): Promise<ScrapeResult> {
 }
 
 export async function scrapeAllEUData(country: string, age: number): Promise<{ success: boolean; data: FeedItem[] }> {
+  profile({ country, age });
   try {
     const [eurlexResult, councilResult] = await Promise.allSettled([
       scrapeEURLex(),
@@ -160,7 +165,7 @@ export async function scrapeAllEUData(country: string, age: number): Promise<{ s
 
     if (apiKey && allItems.length > 0) {
       try {
-        const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
+        const response = await modelFetch('https://api.mistral.ai/v1/chat/completions', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -203,6 +208,7 @@ Output ${allItems.length} lines, one per item, in order. No numbering, no extra 
           }
         }
       } catch (aiErr) {
+    if (aiErr instanceof GuardError) throw aiErr;
         console.error('Mistral scoring failed:', aiErr);
       }
     }
@@ -212,6 +218,7 @@ Output ${allItems.length} lines, one per item, in order. No numbering, no extra 
       data: allItems,
     };
   } catch (error) {
+    if (error instanceof GuardError) throw error;
     console.error('EU data scraping failed:', error);
     return {
       success: false,

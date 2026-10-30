@@ -2,15 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { PriorityTheme, UserProfile } from '@/types';
+import { UserProfile } from '@/types';
 import { getLang } from '@/lib/i18n';
 import { t } from '@/lib/translations';
 import { countryFlag } from '@/hooks/useProfile';
-import { PRIORITY_THEME_OPTIONS } from '@/lib/personalization';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const [saved, setSaved] = useState(false);
   const [profile, setProfile] = useState<UserProfile>(() => {
     if (typeof window !== 'undefined') {
       try {
@@ -35,18 +33,12 @@ export default function ProfilePage() {
     e.preventDefault();
     localStorage.setItem('userProfile', JSON.stringify(profile));
     window.dispatchEvent(new Event('profileUpdate'));
-    setSaved(true);
-    setTimeout(() => router.push('/dashboard'), 1200);
+    router.push('/dashboard');
   };
 
   return (
     <div className="min-h-screen bg-background py-8 sm:py-12 pb-24 md:pb-12">
       <main className="max-w-2xl mx-auto px-4 sm:px-6">
-        {saved && (
-          <div className="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm font-medium text-green-700 text-center">
-            ✓ {tr('profile.saved')}
-          </div>
-        )}
         {/* Profile summary card */}
         {profile.country && (
           <div className="mb-6 animate-slide-up">
@@ -162,37 +154,6 @@ export default function ProfilePage() {
                       { value: 'other', label: tr('opt.other_housing') },
                     ]}
                   />
-                </div>
-              </div>
-
-              {/* Priority themes */}
-              <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Your priorities</h3>
-                <p className="text-sm text-gray-600 dark:text-slate-300 mb-3">Select what matters most. We use this locally to rank feed, stats, and comparisons.</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {PRIORITY_THEME_OPTIONS.map((theme) => {
-                    const selected = (profile.priorityThemes || []).includes(theme.id);
-                    return (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => {
-                          const current = new Set(profile.priorityThemes || []);
-                          if (current.has(theme.id)) current.delete(theme.id);
-                          else current.add(theme.id);
-                          setProfile({ ...profile, priorityThemes: Array.from(current) as PriorityTheme[] });
-                        }}
-                        className={`text-left rounded-xl border p-3 transition-colors ${
-                          selected
-                            ? 'border-eu-blue bg-blue-50 dark:bg-blue-950/30'
-                            : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-gray-300 dark:hover:border-slate-600'
-                        }`}
-                      >
-                        <p className={`text-sm font-semibold ${selected ? 'text-eu-blue dark:text-blue-300' : 'text-gray-800 dark:text-slate-100'}`}>{theme.label}</p>
-                        <p className="text-xs text-gray-500 dark:text-slate-300 mt-0.5">{theme.description}</p>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
 

@@ -40,7 +40,7 @@ const TabsList = forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>
     <div
       ref={ref}
       className={cn(
-        'inline-flex max-w-full overflow-x-auto scrollbar-hide items-center gap-1 rounded-lg bg-gray-100 dark:bg-slate-800 p-1',
+        'inline-flex items-center gap-1 rounded-lg bg-gray-100 p-1',
         className
       )}
       {...props}
@@ -68,8 +68,8 @@ const TabsTrigger = forwardRef<HTMLButtonElement, TabsTriggerProps>(
         className={cn(
           'inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-all',
           isActive
-            ? 'bg-white dark:bg-slate-700 text-eu-blue dark:text-blue-200 shadow-sm font-semibold'
-            : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-700/70',
+            ? 'bg-white text-eu-blue shadow-sm font-semibold'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50',
           className
         )}
         {...props}

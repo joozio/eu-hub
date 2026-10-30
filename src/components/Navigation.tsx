@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslation, countryFlag } from '@/hooks/useProfile';
@@ -10,32 +9,11 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 export default function Navigation() {
   const pathname = usePathname();
   const { t, lang, profile } = useTranslation();
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  useEffect(() => {
-    if (pathname === '/') return;
-
-    const updateProgress = () => {
-      const doc = document.documentElement;
-      const scrollTop = doc.scrollTop || document.body.scrollTop;
-      const scrollHeight = doc.scrollHeight - doc.clientHeight;
-      const next = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-      setScrollProgress(Math.max(0, Math.min(100, next)));
-    };
-
-    updateProgress();
-    window.addEventListener('scroll', updateProgress, { passive: true });
-    window.addEventListener('resize', updateProgress);
-    return () => {
-      window.removeEventListener('scroll', updateProgress);
-      window.removeEventListener('resize', updateProgress);
-    };
-  }, [pathname]);
 
   if (pathname === '/') return null;
 
   return (
-    <nav className="glass sticky top-0 z-50 relative border-b border-white/20 dark:border-slate-700/60 transition-shadow duration-200 shadow-sm">
+    <nav className="glass sticky top-0 z-50 border-b border-white/20 transition-shadow duration-200 shadow-sm">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="flex justify-between items-center h-14">
           <div className="flex items-center gap-6">
@@ -48,30 +26,26 @@ export default function Navigation() {
               <NavLink href="/feed" current={pathname === '/feed'} suppressHydrationWarning>{t('nav.feed')}</NavLink>
               <NavLink href="/stats" current={pathname === '/stats'} suppressHydrationWarning>{t('nav.stats')}</NavLink>
               <NavLink href="/rankings" current={pathname === '/rankings'} suppressHydrationWarning>{t('nav.rankings')}</NavLink>
-              <NavLink href="/compare" current={pathname === '/compare'} suppressHydrationWarning>{t('nav.compare')}</NavLink>
+              <NavLink href="/compare" current={pathname === '/compare'}>Compare</NavLink>
               <NavLink href="/eu-life" current={pathname === '/eu-life'} suppressHydrationWarning>{t('nav.eu_life')}</NavLink>
               <NavLink href="/ask" current={pathname === '/ask'} suppressHydrationWarning>{t('nav.ask')}</NavLink>
             </div>
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle compact />
-            <Link href="/profile" suppressHydrationWarning className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-200 glass-subtle px-3 py-1.5 rounded-full hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all">
+            <Link href="/profile" suppressHydrationWarning className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300 glass-subtle px-3 py-1.5 rounded-full hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all">
               {profile.country ? (
                 <>
                   <span className="text-base">{countryFlag(profile.country)}</span>
-                  <span className="hidden sm:inline text-xs text-gray-600 dark:text-slate-300">{LANG_NAMES[lang]}</span>
+                  <span className="hidden sm:inline text-xs text-gray-600">{LANG_NAMES[lang]}</span>
                 </>
               ) : (
-                <span className="text-xs text-gray-600 dark:text-slate-300">{LANG_NAMES[lang] || 'English'}</span>
+                <span className="text-xs text-gray-600">{LANG_NAMES[lang] || 'English'}</span>
               )}
             </Link>
           </div>
         </div>
       </div>
-      <span
-        className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-eu-gold via-blue-300 to-blue-500 transition-[width] duration-150"
-        style={{ width: `${scrollProgress}%` }}
-      />
     </nav>
   );
 }
@@ -112,13 +86,13 @@ function NavLink({ href, current, children, suppressHydrationWarning }: { href: 
       suppressHydrationWarning={suppressHydrationWarning}
       className={`relative px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
         current
-          ? 'text-eu-blue dark:text-blue-200 bg-white/70 dark:bg-slate-800/80 shadow-sm'
-          : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-50 dark:hover:bg-slate-800/70'
+          ? 'text-eu-blue bg-eu-blue/5'
+          : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
       }`}
     >
       {children}
       {current && (
-        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-gradient-to-r from-eu-gold to-blue-400 rounded-full" />
+        <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-eu-blue-vivid rounded-full" />
       )}
     </Link>
   );
@@ -129,10 +103,10 @@ function MobileNavItem({ href, current, icon, children, suppressHydrationWarning
     <Link
       href={href}
       className={`flex flex-col items-center gap-0.5 px-2 py-1 min-w-0 transition-colors ${
-        current ? 'text-eu-blue dark:text-blue-200' : 'text-gray-500 dark:text-slate-400'
+        current ? 'text-eu-blue' : 'text-gray-500'
       }`}
     >
-      {current && <span className="w-1.5 h-1.5 rounded-full bg-eu-gold mb-0.5" />}
+      {current && <span className="w-1 h-1 rounded-full bg-eu-blue-vivid mb-0.5" />}
       <span className="w-5 h-5">{icon}</span>
       <span suppressHydrationWarning={suppressHydrationWarning} className={`text-[11px] truncate max-w-[56px] ${current ? 'font-semibold' : 'font-medium'}`}>{children}</span>
     </Link>
@@ -183,6 +157,15 @@ function RankingsIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M8 21V11M16 21V7M12 21V3" />
       <path d="M12 3l-2 2M12 3l2 2" />
+    </svg>
+  );
+}
+
+function EULifeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
     </svg>
   );
 }

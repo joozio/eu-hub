@@ -15,7 +15,7 @@ export default function Home() {
   });
   const [showMore, setShowMore] = useState(false);
 
-  const { t } = useTranslation();
+  const { t, lang } = useTranslation();
 
   // Auto-redirect returning users to dashboard
   useEffect(() => {
@@ -86,7 +86,7 @@ export default function Home() {
         </div>
 
         {/* Form card */}
-        <div className="w-full max-w-md bg-white backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-8 border border-white/40">
+        <div className="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/20 p-8 border border-white/40">
           <h2 className="text-xl font-bold text-slate-800 mb-6 text-center">
             {t('landing.form')}
           </h2>
@@ -226,33 +226,33 @@ export default function Home() {
         <div className="mt-8 bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20">
           <div className="flex items-center gap-2 mb-3">
             <span className="text-sm font-semibold text-white/80">{t('landing.preview_title')}</span>
-            <span className="text-xs bg-white/20 text-white/90 px-2 py-0.5 rounded-full">🇪🇺 Sample</span>
+            <span className="text-xs bg-white/20 text-white/60 px-2 py-0.5 rounded-full">📍 {t('landing.personalized')}</span>
           </div>
           <div className="space-y-3">
             <div className="bg-white/5 rounded-lg p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300">Legislation</span>
-                <span className="text-xs text-white/70">EU Commission</span>
+                <span className="text-xs text-white/50">EU Commission</span>
               </div>
               <h3 className="text-sm font-semibold text-white/90 line-clamp-1">EU AI Act - Full Application from August 2025</h3>
-              <p className="text-xs text-white/70 line-clamp-2">The world&apos;s first comprehensive AI regulation establishing risk-based rules for AI systems across all EU member states.</p>
+              <p className="text-xs text-white/70 line-clamp-2">The world's first comprehensive AI regulation establishing risk-based rules for AI systems across all EU member states.</p>
               <p className="text-xs text-white/60 mt-1">Mar 3, 2026</p>
             </div>
             <div className="bg-white/5 rounded-lg p-3 border border-white/10">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">Proposal</span>
-                <span className="text-xs text-white/70">European Council</span>
+                <span className="text-xs text-white/50">European Council</span>
               </div>
               <h3 className="text-sm font-semibold text-white/90 line-clamp-1">Digital Euro Proposal - New EU Currency for the Digital Age</h3>
               <p className="text-xs text-white/70 line-clamp-2">The ECB is preparing a digital euro for all eurozone citizens, free to use and privacy-preserving.</p>
               <p className="text-xs text-white/60 mt-1">Mar 1, 2026</p>
             </div>
           </div>
-          <p className="text-xs text-white/80 mt-3 text-center italic">{t('landing.preview_subtitle')}</p>
+          <p className="text-xs text-white/60 mt-3 text-center italic">{t('landing.preview_subtitle')}</p>
         </div>
 
         {/* Trust strip */}
-        <div className="mt-8 flex items-center gap-4 text-white/70 text-xs">
+        <div className="mt-8 flex items-center gap-4 text-white/50 text-xs">
           <span className="flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />

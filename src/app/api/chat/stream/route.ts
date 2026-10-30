@@ -1,49 +1,12 @@
+import { guarded, readJSON, modelFetch, GuardError } from '@/lib/model-guard';
+import { profile } from '@/lib/model-schema';
 import { NextRequest } from 'next/server';
 import { getLangEnglish } from '@/lib/i18n';
 import { COUNTRY_NAMES } from '@/lib/countries';
-import {
-  asAge,
-  asBoolean,
-  asCountryCode,
-  asTrimmedString,
-  checkRateLimit,
-  fetchWithTimeout,
-  isRecord,
-  requireJsonContentType,
-} from '@/lib/api-guard';
-import { withSourceProbe } from '@/lib/source-registry';
 
-export async function POST(req: NextRequest) {
-  const limited = checkRateLimit(req, { key: 'api-chat-stream', max: 20, windowMs: 60_000 });
-  if (limited) return limited;
-
-  const wrongType = requireJsonContentType(req);
-  if (wrongType) return wrongType;
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: 'Invalid request body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  if (!isRecord(body)) {
-    return new Response(JSON.stringify({ error: 'Invalid request body' }), {
-      status: 400,
-      headers: { 'Content-Type': 'application/json' },
-    });
-  }
-
-  const question = asTrimmedString(body.question, 1200);
-  const country = asCountryCode(body.country);
-  const age = asAge(body.age);
-  const employmentStatus = asTrimmedString(body.employmentStatus, 40);
-  const industry = asTrimmedString(body.industry, 40);
-  const housingStatus = asTrimmedString(body.housingStatus, 40);
-  const isParent = asBoolean(body.isParent);
+async function handle(req: NextRequest) {
+  const body = profile(await readJSON(req), true);
+  const { question, country, age, employmentStatus, industry, isParent } = body;
 
   if (!question || !country) {
     return new Response(JSON.stringify({ error: 'Missing required fields' }), {
@@ -67,11 +30,10 @@ export async function POST(req: NextRequest) {
   if (employmentStatus) profileParts.push(`employment: ${employmentStatus}`);
   if (industry) profileParts.push(`industry: ${industry}`);
   if (isParent) profileParts.push('is a parent');
-  if (housingStatus) profileParts.push(`housing: ${housingStatus}`);
 
   let response;
   try {
-    response = await withSourceProbe('mistral', () => fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
+    response = await modelFetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -100,8 +62,9 @@ Guidelines:
         temperature: 0.3,
         max_tokens: 600,
       }),
-    }, 25_000));
-  } catch {
+    });
+  } catch (error) {
+    if (error instanceof GuardError) throw error;
     return new Response(JSON.stringify({ error: 'Failed to connect to Mistral API' }), {
       status: 502,
       headers: { 'Content-Type': 'application/json' },
@@ -110,68 +73,47 @@ Guidelines:
 
   if (!response.ok || !response.body) {
     return new Response(JSON.stringify({ error: 'Mistral API error' }), {
-      status: 502,
+      status: response.status,
       headers: { 'Content-Type': 'application/json' },
     });
   }
 
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
-
+  const reader = response.body.getReader();
+  let buffer = '';
+  let canceled = false;
   const stream = new ReadableStream({
     async start(controller) {
-      const reader = response.body!.getReader();
-      let buffer = '';
-
       try {
-        while (true) {
+        while (!canceled) {
           const { done, value } = await reader.read();
           if (done) break;
-
           buffer += decoder.decode(value, { stream: true });
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
-
           for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data:')) continue;
-            const data = trimmed.replace(/^data:\s?/, '');
+            if (!line.startsWith('data:')) continue;
+            const data = line.slice(5).trim();
             if (data === '[DONE]') continue;
-
             try {
               const parsed = JSON.parse(data);
               const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
+              if (typeof content === 'string' && !canceled) {
                 controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
               }
-            } catch {
-              // Skip unparseable chunks
-            }
+            } catch { /* Ignore non-content SSE frames. */ }
           }
         }
-
-        const tail = buffer.trim();
-        if (tail.startsWith('data:')) {
-          const data = tail.replace(/^data:\s?/, '');
-          if (data && data !== '[DONE]') {
-            try {
-              const parsed = JSON.parse(data);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
-              }
-            } catch {
-              // Ignore trailing partials.
-            }
-          }
+        if (!canceled) {
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+          controller.close();
         }
-      } catch (error) {
-        console.error('Stream error:', error);
-      } finally {
-        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-        controller.close();
-      }
+      } catch {
+        if (!canceled) controller.error(new Error('AI stream ended'));
+      } finally { await reader.cancel().catch(() => {}); }
     },
+    async cancel() { canceled = true; await reader.cancel().catch(() => {}); },
   });
 
   return new Response(stream, {
@@ -179,7 +121,8 @@ Guidelines:
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no',
     },
   });
 }
+
+export const POST = guarded(handle);

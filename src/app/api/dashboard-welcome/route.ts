@@ -1,47 +1,16 @@
-import { NextRequest } from 'next/server';
+import { guarded, readJSON, modelFetch, GuardError } from '@/lib/model-guard';
+import { profile } from '@/lib/model-schema';
+import { NextRequest, NextResponse } from 'next/server';
 import { getLangEnglish } from '@/lib/i18n';
 import { COUNTRY_NAMES } from '@/lib/countries';
-import {
-  asAge,
-  asCountryCode,
-  asTrimmedString,
-  checkRateLimit,
-  fetchWithTimeout,
-  isRecord,
-  requireJsonContentType,
-} from '@/lib/api-guard';
-import { withSourceProbe } from '@/lib/source-registry';
-import { jsonWithRequestId } from '@/lib/request-id';
 
-export async function POST(req: NextRequest) {
-  const limited = checkRateLimit(req, { key: 'api-dashboard-welcome', max: 25, windowMs: 60_000 });
-  if (limited) return limited;
-
-  const wrongType = requireJsonContentType(req);
-  if (wrongType) return wrongType;
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonWithRequestId(req, { error: 'Invalid request body' }, 400);
-  }
-
-  if (!isRecord(body)) {
-    return jsonWithRequestId(req, { error: 'Invalid request body' }, 400);
-  }
-
-  const country = asCountryCode(body.country);
-  const age = asAge(body.age);
-  const employmentStatus = asTrimmedString(body.employmentStatus, 40);
-
-  if (!country) {
-    return jsonWithRequestId(req, { error: 'Missing required fields' }, 400);
-  }
+async function handle(req: NextRequest) {
+  const body = profile(await readJSON(req));
+  const { country, age, employmentStatus } = body;
 
   const apiKey = process.env.MISTRAL_API_KEY;
   if (!apiKey) {
-    return jsonWithRequestId(req, { error: 'Mistral API key not configured' }, 500);
+    return NextResponse.json({ error: 'Mistral API key not configured' }, { status: 500 });
   }
 
   const countryName = COUNTRY_NAMES[country] || country;
@@ -51,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (employmentStatus) profileParts.push(`${employmentStatus}`);
 
   try {
-    const response = await withSourceProbe('mistral', () => fetchWithTimeout('https://api.mistral.ai/v1/chat/completions', {
+    const response = await modelFetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -88,17 +57,20 @@ IMPORTANT: Respond entirely in ${language}. No markdown. No bullet points. Just 
         temperature: 0.5,
         max_tokens: 200,
       }),
-    }, 20_000));
+    });
 
     if (!response.ok) {
-      return jsonWithRequestId(req, { error: 'Mistral API error' }, 502);
+      return NextResponse.json({ error: 'Mistral API error' }, { status: response.status });
     }
 
     const data = await response.json();
     const greeting = data.choices?.[0]?.message?.content || '';
 
-    return jsonWithRequestId(req, { greeting, model: data.model });
-  } catch {
-    return jsonWithRequestId(req, { error: 'Failed to generate greeting' }, 500);
+    return NextResponse.json({ greeting, model: data.model });
+  } catch (error) {
+    if (error instanceof GuardError) throw error;
+    return NextResponse.json({ error: 'Failed to generate greeting' }, { status: 500 });
   }
 }
+
+export const POST = guarded(handle);

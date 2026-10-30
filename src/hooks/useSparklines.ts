@@ -12,6 +12,8 @@ function getEurostatGeoLocal(isoCode: string): string {
   return COUNTRY_MAP[isoCode] || isoCode;
 }
 
+const BASE_URL = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
+
 function parseTimeSeries(data: Record<string, unknown>, limit = 6): SparklinePoint[] {
   const timeIndex = (data.dimension as Record<string, unknown>)?.time as Record<string, unknown>;
   const category = timeIndex?.category as Record<string, unknown>;

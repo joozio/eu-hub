@@ -39,8 +39,3 @@ export function getLang(countryCode: string): string {
 export function getLangEnglish(countryCode: string): string {
   return LANG_ENGLISH[getLang(countryCode)] || 'English';
 }
-
-export function normalizeLangCode(lang: string): string {
-  const code = (lang || '').trim().toLowerCase();
-  return code || 'en';
-}

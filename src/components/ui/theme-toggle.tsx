@@ -1,10 +1,14 @@
 'use client';
 
-import { useState } from 'react';
-import { setStoredTheme, applyTheme, getEffectiveTheme, Theme } from '@/lib/theme';
+import { useState, useEffect } from 'react';
+import { getStoredTheme, setStoredTheme, applyTheme, getEffectiveTheme, Theme } from '@/lib/theme';
 
 export function ThemeToggle({ compact = false }: { compact?: boolean }) {
-  const [effective, setEffective] = useState<'light' | 'dark'>(() => getEffectiveTheme());
+  const [effective, setEffective] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    setEffective(getEffectiveTheme());
+  }, []);
 
   const toggle = () => {
     const next: Theme = effective === 'dark' ? 'light' : 'dark';

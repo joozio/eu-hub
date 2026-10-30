@@ -3,7 +3,6 @@
  * Free public API - no authentication required
  * Docs: https://ec.europa.eu/eurostat/web/user-guides/data-browser/api-data-access
  */
-import { withSourceProbe } from '@/lib/source-registry';
 
 const BASE_URL = 'https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data';
 
@@ -108,7 +107,7 @@ export const INDICATORS: IndicatorConfig[] = [
     label: 'Median Income',
     unit: 'EUR/year',
     category: 'living',
-    buildUrl: (geo) => `${BASE_URL}/ilc_di03?format=JSON&lang=EN&geo=${geo}&indic_il=MEI_E&unit=EUR&sinceTimePeriod=2018`,
+    buildUrl: (geo) => `${BASE_URL}/ilc_di03?format=JSON&lang=EN&geo=${geo}&statinfo=MED_EI&age=TOTAL&sex=T&unit=EUR&sinceTimePeriod=2018`,
     fallback: 18000,
   },
   {
@@ -117,7 +116,7 @@ export const INDICATORS: IndicatorConfig[] = [
     label: 'Housing Cost Overburden',
     unit: '%',
     category: 'living',
-    buildUrl: (geo) => `${BASE_URL}/ilc_lvho07a?format=JSON&lang=EN&geo=${geo}&incgrp=TOTAL&age=TOTAL&sex=T&sinceTimePeriod=2018`,
+    buildUrl: (geo) => `${BASE_URL}/ilc_lvho07a?format=JSON&lang=EN&geo=${geo}&rskpovth=TOTAL&age=TOTAL&sex=T&unit=PC&sinceTimePeriod=2018`,
     fallback: 9.4,
   },
   {
@@ -233,7 +232,7 @@ function formatPeriodLabel(period: string): string {
   return period;
 }
 
-export function parseEurostatValue(data: Record<string, unknown>): { period: string; periodLabel: string; value: number } | null {
+function parseEurostatValue(data: Record<string, unknown>): { period: string; periodLabel: string; value: number } | null {
   const timeIndex = (data.dimension as Record<string, unknown>)?.time as Record<string, unknown>;
   const category = timeIndex?.category as Record<string, unknown>;
   const index = category?.index as Record<string, number>;
@@ -261,7 +260,7 @@ async function fetchSingleIndicator(
 
   try {
     const url = config.buildUrl(geo);
-    const response = await withSourceProbe('eurostat', () => fetch(url, { next: { revalidate: 3600 } }));
+    const response = await fetch(url, { next: { revalidate: 3600 } });
 
     if (!response.ok) {
       console.error(`Eurostat API error for ${config.id}/${country}: ${response.status}`);
@@ -329,16 +328,6 @@ export async function fetchRealEurostatData(
   return { success: true, data, partial: hasFailures };
 }
 
-export async function fetchCountryIndicators(
-  country: string,
-  indicatorIds: string[]
-): Promise<Record<string, { value: number; period: string }>> {
-  const result = await fetchRealEurostatData(country, indicatorIds);
-  return Object.fromEntries(
-    result.data.map((entry) => [entry.indicator, { value: entry.value, period: entry.period }])
-  );
-}
-
 // Fetch data for EU27 average alongside country
 export async function fetchWithEUComparison(
   country: string,
@@ -347,7 +336,6 @@ export async function fetchWithEUComparison(
   success: boolean;
   country: EurostatResponse[];
   eu: EurostatResponse[];
-  partial: boolean;
 }> {
   const [countryData, euData] = await Promise.all([
     fetchRealEurostatData(country, indicatorIds),
@@ -358,8 +346,6 @@ export async function fetchWithEUComparison(
     success: true,
     country: countryData.data,
     eu: euData.data,
-    // True when any value is a built-in estimate rather than Eurostat data.
-    partial: Boolean(countryData.partial || euData.partial),
   };
 }
 

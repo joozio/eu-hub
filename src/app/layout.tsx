@@ -5,9 +5,6 @@ import Navigation from '@/components/Navigation';
 import { MobileBottomNav } from '@/components/Navigation';
 import { RootLayoutClient } from './RootLayoutClient';
 import { ThemeProvider } from './ThemeProvider';
-import { assertEnv } from '@/lib/env';
-
-assertEnv();
 
 const dmSans = DM_Sans({
   subsets: ['latin', 'latin-ext'],
@@ -69,7 +66,7 @@ export default function RootLayout({
               try {
                 const t = localStorage.getItem('eu-hub-theme');
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                if (t === 'dark' || (t === 'system' && prefersDark)) {
+                if (t === 'dark' || (!t && prefersDark) || (t === 'system' && prefersDark)) {
                   document.documentElement.classList.add('dark');
                 }
               } catch(e) {}
