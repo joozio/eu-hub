@@ -21,6 +21,9 @@ export function parseRssItems(xml: string, sourceName: string): FeedItem[] {
 
     if (!title) continue;
 
+    const parsedDate = pubDate ? new Date(pubDate) : new Date();
+    const date = (Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate).toISOString().split('T')[0];
+
     let type: FeedItem['type'] = 'news';
     const catStr = categories.join(' ').toLowerCase();
     const titleLower = title.toLowerCase();
@@ -34,7 +37,7 @@ export function parseRssItems(xml: string, sourceName: string): FeedItem[] {
       id: guid,
       title,
       description: desc.slice(0, 300),
-      date: pubDate ? new Date(pubDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      date,
       type,
       relevanceScore: 0.8,
       sourceUrl: link,

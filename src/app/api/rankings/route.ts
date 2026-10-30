@@ -58,6 +58,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const data = await fetchAllRankings();
+    // fetchAllRankings swallows per-indicator failures, so a full outage resolves empty.
+    // Treat that as a failure instead of caching an empty ranking for 6 hours.
+    if (data.indicators.length === 0) throw new Error('No ranking indicators fetched');
     cache = { data, timestamp: now };
     return jsonWithRequestId(req, withMeta(data, 'live'));
   } catch (error) {

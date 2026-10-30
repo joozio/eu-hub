@@ -143,7 +143,8 @@ Output ${result.length} lines, one per item, in order. No numbering, no extra te
       .filter((l: string) => l.includes('|'));
 
     for (let i = 0; i < Math.min(lines.length, result.length); i++) {
-      const line = lines[i].replace(/^\d+\.\s*/, '');
+      // Strip "1. " style numbering only; a bare "0.9|" is the score itself.
+      const line = lines[i].replace(/^\d+[.)]\s+/, '');
       const parts = line.split('|');
       if (parts.length < 2) continue;
 
